@@ -41,6 +41,7 @@ jobs:
           Rscript -e 'for (f in commandArgs(TRUE)) if (file.exists(f)) rmarkdown::render(f)' ${RMD_PATH[*]} 
       - name: Commit results
         run: |
+          git add README_files/figure-gfm/*
           git config --local user.name "$GITHUB_ACTOR"
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git commit -a -m 'Re-build Rmarkdown files'
