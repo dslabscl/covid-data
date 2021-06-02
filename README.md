@@ -1,8 +1,9 @@
 
-# COVID 19 en Chile
+# COVID 19 en Chile ![GitHub last commit](https://img.shields.io/github/last-commit/dslabscl/covid-data)
 
 Ejemplo de uso de datos de COVID recopilados por el Ministerio de
-Ciencia de Chile <https://www.minciencia.gob.cl/covid19>
+Ciencia de Chile <https://www.minciencia.gob.cl/covid19>. Última
+actualización: 2021-06-02
 
 ## Visualización desde el comienzo de la pandemia
 

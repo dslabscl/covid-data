@@ -2,9 +2,9 @@
 output: github_document
 ---
 
-# COVID 19 en Chile
+# COVID 19 en Chile ![GitHub last commit](https://img.shields.io/github/last-commit/dslabscl/covid-data)
 
-Ejemplo de uso de datos de COVID recopilados por el Ministerio de Ciencia de Chile https://www.minciencia.gob.cl/covid19
+Ejemplo de uso de datos de COVID recopilados por el Ministerio de Ciencia de Chile https://www.minciencia.gob.cl/covid19. Última actualización: `r Sys.Date()`
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
@@ -78,7 +78,7 @@ ggplot(
   theme(
     axis.text.x = element_text(angle = 60, vjust = .5)
     ) +
-  labs(title = "Fallecidos totales Regiones\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+  labs(title = "Casos nuevos totales Regiones\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 
 ggplot(
   datos_ult_7[Categoria == "Casos nuevos totales" & Region == "Metropolitana"],
@@ -90,7 +90,7 @@ ggplot(
   theme(
     axis.text.x = element_text(angle = 60, vjust = .5)
     ) +
-  labs(title = "Fallecidos totales Metropolitana\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+  labs(title = "Casos nuevos totales Metropolitana\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
 
