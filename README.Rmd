@@ -7,12 +7,10 @@ output: github_document
 Ejemplo de uso de datos de COVID recopilados por el Ministerio de Ciencia de Chile https://www.minciencia.gob.cl/covid19
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-## Regionales Diarios
-
-```{r}
+```{r retrieve-data, echo=FALSE}
 fn <- tempfile(fileext = ".csv")
 total_region <- download.file(
   "https://github.com/MinCiencia/Datos-COVID19/raw/master/output/producto3/TotalesPorRegion_std.csv",
@@ -22,32 +20,92 @@ total_region <- download.file(
 )
 
 library(data.table)
+library(ggplot2)
 datos<- fread(fn)
 datos[, Fecha := as.IDate(Fecha)]
 ```
 
-## Visualización
+## Visualización desde el comienzo de la pandemia
 
 ```{r vis-serie-tiempo-region}
-library(ggplot2)
 ggplot(
   datos[Categoria == "Fallecidos totales" & !Region %in% c("Total", "Metropolitana")],
   aes(x = Fecha, y = Total)
   ) +
   geom_line() +
   facet_wrap(vars(Region)) +
-  labs(title = "Fallecidos totales", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
+  labs(title = "Fallecidos totales Regiones", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+
+ggplot(
+  datos[Categoria == "Fallecidos totales" & Region == "Metropolitana"],
+  aes(x = Fecha, y = Total)
+  ) +
+  geom_line() +
+  facet_wrap(vars(Region)) +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
+  labs(title = "Fallecidos totales Metropolitana", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
 
-
 ```{r vis-serie-tiempo-total}
-library(ggplot2)
 ggplot(
   datos[Region == "Total" & !Categoria %in% c("Casos acumulados", "Casos confirmados recuperados", "Casos probables acumulados")],
   aes(x = Fecha, y = Total)
   ) +
   geom_line(aes(color = Categoria)) +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
   labs(title = "Totales a nivel nacional", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
+## Visualización últimos 7 días
+
+```{r vis-serie-tiempo-region-ult-7-dias}
+datos_ult_7 <- datos[Fecha > (Sys.Date() - 7)]
+ggplot(
+  datos_ult_7[Categoria == "Casos nuevos totales" & !Region %in% c("Total", "Metropolitana")],
+  aes(x = Fecha, y = Total)
+  ) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(Region)) +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
+  labs(title = "Fallecidos totales Regiones\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+
+ggplot(
+  datos_ult_7[Categoria == "Casos nuevos totales" & Region == "Metropolitana"],
+  aes(x = Fecha, y = Total)
+  ) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(vars(Region)) +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
+  labs(title = "Fallecidos totales Metropolitana\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+```
+
+
+```{r vis-serie-tiempo-total-ult-7-dias}
+ggplot(
+  datos_ult_7[Region == "Total" & !Categoria %in% c("Casos acumulados", "Casos confirmados recuperados", "Casos probables acumulados")],
+  aes(x = Fecha, y = Total)
+  ) +
+  geom_line(aes(color = Categoria)) +
+  geom_point() +
+  theme(
+    axis.text.x = element_text(angle = 60, vjust = .5)
+    ) +
+  labs(
+    title = "Totales a nivel nacional\n(últimos 7 días)",
+    caption = "Fuente: https://www.minciencia.gob.cl/covid19"
+    )
+```
