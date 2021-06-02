@@ -33,7 +33,7 @@ jobs:
 
       - name: Install packages
         run: |
-          R -e 'install.packages(c("renv", "data.table", "httr", "rmarkdown"))'
+          R -e 'install.packages(c("renv", "data.table", "httr", "rmarkdown", "ggplot2"))'
           R -e 'renv::restore()'
       - name: Render Rmarkdown files
         run: |
