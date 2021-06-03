@@ -36,7 +36,7 @@ jobs:
           docker run -v$(pwd):/home/report -w/home/report dslab-covid-report \
             Rscript -e 'rmarkdown::render("README.Rmd")'
 
-        me: Commit results
+      - name: Commit results
         run: |
           git config --local user.name "$GITHUB_ACTOR"
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
