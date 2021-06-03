@@ -33,7 +33,7 @@ jobs:
 
       - name: Compilar
         run:  |
-          docker run -v$(pwd):/home/report -w/home/report dslab-covid-report \
+          docker run -v$(pwd):/home/report -w/home/report ${{ matrix.cntr }} \
             Rscript -e 'rmarkdown::render("README.Rmd")'
 
       - name: Commit results
