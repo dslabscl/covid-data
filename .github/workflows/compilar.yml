@@ -1,0 +1,45 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+#
+# See https://github.com/r-lib/actions/tree/master/examples#readme for
+# additional example workflows available for the R community.
+
+name: Compilar w docker
+
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    cron: '0 0 * * 1,3,5'
+
+jobs:
+  build:
+    runs-on: Ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        include:
+        - name: latest
+          cntr: dslabscl/dslab-covid-report:latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Container
+        run: docker pull ${{ matrix.cntr }}
+
+      - name: Compilar
+        run:  |
+          docker run -v$(pwd):/home/report -w/home/report dslab-covid-report \
+            Rscript -e 'rmarkdown::render("README.Rmd")'
+
+        me: Commit results
+        run: |
+          git config --local user.name "$GITHUB_ACTOR"
+          git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git commit -a -m 'Re-build Rmarkdown files'
+          git push origin || echo "No changes to commit"
+
