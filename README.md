@@ -3,7 +3,7 @@
 
 Ejemplo de uso de datos de COVID recopilados por el Ministerio de
 Ciencia de Chile <https://www.minciencia.gob.cl/covid19>. Última
-actualización: 2021-06-04
+actualización: 2021-06-07
 
 ## Visualización desde el comienzo de la pandemia
 
