@@ -1,7 +1,7 @@
 
 # COVID 19 en Chile ![GitHub last commit](https://img.shields.io/github/last-commit/dslabscl/covid-data)
 
-Ejemplo de uso de datos de COVID recopilados por el Ministerio de
+Ejemplo de uso de total\_casos de COVID recopilados por el Ministerio de
 Ciencia de Chile <https://www.minciencia.gob.cl/covid19>. Última
 actualización: 2021-06-16
 
@@ -11,7 +11,7 @@ actualización: 2021-06-16
 
 ![](README_files/figure-gfm/vis-serie-tiempo-total-1.png)<!-- -->
 
-## Visualización últimos 7 días
+## Visualización últimas 2 semanas
 
 ![](README_files/figure-gfm/vis-serie-tiempo-region-ult-7-dias-1.png)<!-- -->![](README_files/figure-gfm/vis-serie-tiempo-region-ult-7-dias-2.png)<!-- -->
 
