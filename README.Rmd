@@ -187,7 +187,7 @@ ggplot(
   scale_x_date(breaks = Sys.Date() - (WINDOW_SIZE - 1):0) +
   ylab("Casos nuevos totales") +
   labs(
-    title = "Totales a nivel nacional\n(últimos 7 días)",
+    title = sprintf("Totales a nivel nacional\n(últimos %i días)", WINDOW_SIZE),
     caption = "Fuente: https://www.minciencia.gob.cl/covid19"
     )
 ```
