@@ -4,25 +4,45 @@ output: github_document
 
 # COVID 19 en Chile ![GitHub last commit](https://img.shields.io/github/last-commit/dslabscl/covid-data)
 
-Ejemplo de uso de datos de COVID recopilados por el Ministerio de Ciencia de Chile https://www.minciencia.gob.cl/covid19. Última actualización: `r Sys.Date()`
+Ejemplo de uso de total_casos de COVID recopilados por el Ministerio de Ciencia de Chile https://www.minciencia.gob.cl/covid19. Última actualización: `r Sys.Date()`
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(data.table)
+library(ggplot2)
 ```
 
-```{r retrieve-data, echo=FALSE}
+```{r retrieve-data-cases, echo=FALSE}
 fn <- tempfile(fileext = ".csv")
 total_region <- download.file(
-  "https://github.com/MinCiencia/Datos-COVID19/raw/master/output/producto3/TotalesPorRegion_std.csv",
+  "https://github.com/MinCiencia/datos-COVID19/raw/master/output/producto3/TotalesPorRegion_std.csv",
   destfile = fn,
   method = "wget",
   timeout = 60
 )
+stopifnot(total_region == 0)
 
-library(data.table)
-library(ggplot2)
-datos<- fread(fn)
-datos[, Fecha := as.IDate(Fecha)]
+total_casos <- fread(fn)
+```
+
+```{r retrieve-data-vax, echo = FALSE}
+fn <- tempfile(fileext = ".csv")
+total_region_vax <- download.file(
+  "https://github.com/MinCiencia/datos-COVID19/raw/master/output/producto76/vacunacion_std.csv",
+  destfile = fn,
+  method = "wget",
+  timeout = 60
+)
+stopifnot(total_region_vax == 0)
+total_region_vax <- fread(fn)
+```
+
+
+```{r date-process}
+setnames(total_region_vax, c("Dosis", "Cantidad"), c("Categoria", "Total"))
+datos <- rbind(total_region_vax, total_casos)
+datos[Categoria == "Primera", Categoria := "1ra Dosis"]
+datos[Categoria == "Segunda", Categoria := "2da Dosis"]
 ```
 
 ## Visualización desde el comienzo de la pandemia
@@ -35,7 +55,7 @@ ggplot(
   geom_line() +
   facet_wrap(vars(Region)) +
   theme(
-    axis.text.x = element_text(angle = 60, vjust = .5)
+    axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)
     ) +
   labs(title = "Fallecidos totales Regiones", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 
@@ -48,26 +68,45 @@ ggplot(
   theme(
     axis.text.x = element_text(angle = 60, vjust = .5)
     ) +
+  scale_x_date(date_breaks = "2 months") +
   labs(title = "Fallecidos totales Metropolitana", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
 
 ```{r vis-serie-tiempo-total}
+# Agregando casos activos, nuevos, totales
+totales_scaled <- copy(datos)
+cat_vax <- c("1ra Dosis", "2da Dosis", "Unica")
+cat_cas <- c("Casos activos confirmados", "Casos nuevos totales")
+yfactor <- max(datos[Categoria %in% cat_cas, c(Total)], na.rm = TRUE)
+yfactor <- yfactor/max(datos[Categoria %in% cat_vax, c(Total)], na.rm = TRUE)
+totales_scaled[Categoria %in% cat_vax, Total := Total * yfactor]
 ggplot(
-  datos[Region == "Total" & !Categoria %in% c("Casos acumulados", "Casos confirmados recuperados", "Casos probables acumulados")],
-  aes(x = Fecha, y = Total)
-  ) +
+  totales_scaled[
+    Region == "Total" &
+      Categoria %in% c(
+        "Casos activos confirmados",
+        "Casos nuevos totales", "1ra Dosis", "2da Dosis")
+    ],
+  aes(x = Fecha, y = Total)) +
+  scale_y_continuous(sec.axis = sec_axis(~ . / yfactor / 1e6, name = "Vacunados (millones)")) +
   geom_line(aes(color = Categoria)) +
   theme(
     axis.text.x = element_text(angle = 60, vjust = .5)
     ) +
+  scale_x_date(date_breaks = "2 months")+
   labs(title = "Totales a nivel nacional", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
-## Visualización últimos 7 días
+## Visualización últimas 2 semanas
+
+```{r echo=FALSE}
+WINDOW_SIZE <- 14
+```
+
 
 ```{r vis-serie-tiempo-region-ult-7-dias}
-datos_ult_7 <- datos[Fecha > (Sys.Date() - 7)]
+datos_ult_7 <- total_casos[Fecha > (Sys.Date() - WINDOW_SIZE)]
 ggplot(
   datos_ult_7[Categoria == "Casos nuevos totales" & !Region %in% c("Total", "Metropolitana")],
   aes(x = Fecha, y = Total)
@@ -76,34 +115,77 @@ ggplot(
   geom_point() +
   facet_wrap(vars(Region)) +
   theme(
-    axis.text.x = element_text(angle = 60, vjust = .5)
+    axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)
     ) +
-  labs(title = "Casos nuevos totales Regiones\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+  scale_x_date(breaks = Sys.Date() - seq(from = WINDOW_SIZE-1, to = 0, length.out = 5)) +
+  labs(title = 
+         sprintf(
+           "Casos nuevos totales Regiones\n(últimos %i días)",
+           WINDOW_SIZE
+           ), caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 
+# Totales de dosis deben ser el diferencia (crecimiento)
+setorder(datos, Categoria, Region, Fecha)
+totales_scaled <- copy(datos)
+totales_scaled[, Total_dif := Total - shift(Total, type="lag"), by = .(Categoria, Region)]
+totales_scaled[, Total_dif2 := frollmean(Total_dif, 7), by = .(Categoria, Region)]
+totales_scaled[Categoria %in% c("1ra Dosis", "2da Dosis"), Total := Total_dif2]
+
+totales_scaled <- totales_scaled[Region == "Metropolitana" & (Fecha > (Sys.Date() - WINDOW_SIZE ))]
+cat_vax <- c("1ra Dosis", "2da Dosis")
+cat_cas <- c("Casos nuevos totales")
+yfactor <- max(totales_scaled[Categoria %in% cat_cas, c(Total)], na.rm = TRUE)
+yfactor <- yfactor/max(totales_scaled[Categoria %in% cat_vax, c(Total)], na.rm = TRUE)
+totales_scaled[Categoria %in% cat_vax, Total := Total * yfactor]
 ggplot(
-  datos_ult_7[Categoria == "Casos nuevos totales" & Region == "Metropolitana"],
+  totales_scaled[
+    Categoria %in% c(cat_vax, cat_cas) & Region == "Metropolitana"],
   aes(x = Fecha, y = Total)
   ) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(vars(Region)) +
-  theme(
-    axis.text.x = element_text(angle = 60, vjust = .5)
+  geom_line(aes(color=Categoria)) +
+  scale_y_continuous(
+    sec.axis = sec_axis(
+      ~ . / yfactor ,
+      name = "Vacunados Nuevos\n(media móvil semanal)"
+      )
     ) +
-  labs(title = "Casos nuevos totales Metropolitana\n(últimos 7 días)", caption = "Fuente: https://www.minciencia.gob.cl/covid19")
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) +
+  scale_x_date(breaks = Sys.Date() - (WINDOW_SIZE - 1):0) +
+  ylab("Casos nuevos totales") +
+  labs(
+    title =
+      sprintf("Cifras Diarias Región Metropolitana\n(últimos %i días)", WINDOW_SIZE),
+    caption = "Fuente: https://www.minciencia.gob.cl/covid19")
 ```
 
 
 ```{r vis-serie-tiempo-total-ult-7-dias}
+setorder(datos, Categoria, Region, Fecha)
+totales_scaled <- copy(datos)
+totales_scaled[, Total_dif := Total - shift(Total, type="lag"), by = .(Categoria, Region)]
+totales_scaled[, Total_dif2 := frollmean(Total_dif, 7), by = .(Categoria, Region)]
+totales_scaled[Categoria %in% c("1ra Dosis", "2da Dosis"), Total := Total_dif2]
+
+totales_scaled <- totales_scaled[Region == "Total" & (Fecha > (Sys.Date() - WINDOW_SIZE))]
+cat_vax <- c("1ra Dosis", "2da Dosis")
+cat_cas <- c("Casos nuevos totales")
+yfactor <- max(totales_scaled[Categoria %in% cat_cas, c(Total)], na.rm = TRUE)
+yfactor <- yfactor/max(totales_scaled[Categoria %in% cat_vax, c(Total)], na.rm = TRUE)
+totales_scaled[Categoria %in% cat_vax, Total := Total * yfactor]
 ggplot(
-  datos_ult_7[Region == "Total" & !Categoria %in% c("Casos acumulados", "Casos confirmados recuperados", "Casos probables acumulados")],
+  totales_scaled[Categoria %in% c(cat_vax, cat_cas)],
   aes(x = Fecha, y = Total)
   ) +
   geom_line(aes(color = Categoria)) +
-  geom_point() +
-  theme(
-    axis.text.x = element_text(angle = 60, vjust = .5)
+  scale_y_continuous(
+    sec.axis = sec_axis(
+      ~ . / yfactor / 1000,
+      name = "Vacunados Nuevos\n(miles, media móvil semanal)"
+      )
     ) +
+  theme(axis.text.x = element_text(angle = 60, vjust = .5)) +
+  scale_x_date(breaks = Sys.Date() - (WINDOW_SIZE - 1):0) +
+  ylab("Casos nuevos totales") +
   labs(
     title = "Totales a nivel nacional\n(últimos 7 días)",
     caption = "Fuente: https://www.minciencia.gob.cl/covid19"
