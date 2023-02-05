@@ -3,7 +3,7 @@
 
 Ejemplo de uso de total\_casos de COVID recopilados por el Ministerio de
 Ciencia de Chile <https://www.minciencia.gob.cl/covid19>. Última
-actualización: 2023-02-04
+actualización: 2023-02-05
 
 ## Visualización desde el comienzo de la pandemia
 
